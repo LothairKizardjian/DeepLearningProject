@@ -104,30 +104,18 @@ def train(model,model_title,epochs,batch_size):
 
 planes = 8
 moves = 361
-dynamicBatch = True
+batch_size = 137072
 
-if dynamicBatch:
-    import golois
-    N = 100000
-    input_data = np.random.randint(2, size=(N, 19, 19, planes))
-    input_data = input_data.astype ('float32')
-    
-    policy = np.random.randint(moves, size=(N,))
-    policy = keras.utils.to_categorical (policy)
-    
-    value = np.random.randint(2, size=(N,))
-    value = value.astype ('float32')
-    
-    end = np.random.randint(2, size=(N, 19, 19, 2))
-    end = end.astype ('float32')
+train_input_data, train_policy, train_value = data_utills.get_batch_data(
+    games = "data/games_train.data",
+    planes = planes,
+    moves = moves,
+    batch_size = batch_size)
 
-    golois.getBatch (input_data, policy, value, end)
-else:
-    input_data = np.load ('input_data.npy')
-    policy = np.load ('policy.npy')
-    value = np.load ('value.npy')
-    end = np.load ('end.npy')
-    
-model = build_model((19,19,planes),361,10,62,64)
-train(model,'LK_ResGo_v4',50,64)
+test_input_data = np.load("data/test_input_data.npy")
+test_policy = np.load("data/test_policy.npy")
+test_value = np.load("data/test_value.npy")
+
+model = build_model((19,19,planes),moves,10,64,64)
+train(model,'LK_ResGo_v4',20,64)
     

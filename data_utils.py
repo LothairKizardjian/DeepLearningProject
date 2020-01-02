@@ -52,7 +52,7 @@ class DataSequence(keras.utils.Sequence):
 
     def on_epoch_end(self):
         self.data, self.policy, self.value = get_batch_data(
-            games = "games.data",
+            games = "./data/games.data",
             planes= 8,
             moves = 361,
             batch_size = 137072)
