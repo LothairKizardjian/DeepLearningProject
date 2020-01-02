@@ -1,8 +1,10 @@
+import tensorflow.keras as keras
 import numpy as np
 import golois
+import math
 
-def generate_data(games,planes,moves,batch_size):
-    """ Generates random batches of data with the CPP function get_batch_data of golois
+def get_data(games,planes,moves,batch_size):
+    """ Generates random batches of data with the CPP function getBatch of golois
     
     Args:
     games : data of the games
@@ -25,4 +27,35 @@ def generate_data(games,planes,moves,batch_size):
     value = np.random.randint(2, size=(N,))
     value = value.astype("float32")
 
+    end = np.random.randint(2, size=(N, 19, 19, 2))
+    end = end.astype("float32")
+
+    golois.getBatch(games, input, policy, value, end)
+    return input, policy, value
+
+class DataSequence(keras.utils.Sequence):
+    def __init__(self, data, policy, value, batch_size):
+        self.data = data
+        self.policy = policy
+        self.value = value
+        self.batch_size = batch_size
+
+    def __len__(self):
+        return math.ceil(len(self.x) / self.batch_size)
+
+    def __getitem__(self, idx):
+        data = np.array(self.data[idx * self.batch_size : (idx+1) * self.batch_size])
+        policy = np.array(self.policy[idx * self.batch_size : (idx+1) * self.batch_size])
+        value = np.array(self.value[idx * self.batch_size : (idx+1) * self.batch_size])
+
+        return data, policy, value
+
+    def on_epoch_end(self):
+        self.data, self.policy, self.value = get_batch_data(
+            games = "games.data",
+            planes= 8,
+            moves = 361,
+            batch_size = 137072)
+
+        
     
