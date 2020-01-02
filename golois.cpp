@@ -28,9 +28,10 @@ PYBIND11_MODULE(golois, m) {
 		       py::array_t<float> value, py::array_t<float> end) {
 	if (!loaded) {
 	  memcpy (historyBoard [0], board.board, MaxSize);
-	  fprintf (stderr, "load games.data\n");
-	  loadGamesData ("games.data");
+	  fprintf (stderr, "Loading games_train.data ...\n");
+	  loadGamesData ("./data/games_train.data");
 	  loaded = true;
+	  fprintf(stderr, "games_train.data loaded.\n");
 	}
 	auto r = x.mutable_unchecked<4>();
 	auto pi = policy.mutable_unchecked<2>();

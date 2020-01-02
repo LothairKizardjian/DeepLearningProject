@@ -90,7 +90,7 @@ def train(model,model_title,epochs,batch_size):
         save_best_only=True)
     
     model.fit_generator(
-        generator=data_utils.Datasequence(
+        generator=data_utils.DataSequence(
             train_input_data,
             train_policy,
             train_value,
@@ -104,18 +104,30 @@ def train(model,model_title,epochs,batch_size):
 
 planes = 8
 moves = 361
-batch_size = 137072
+batch_size = 50000
 
-train_input_data, train_policy, train_value = data_utills.get_batch_data(
-    games = "data/games_train.data",
+print("Loading train data ...")
+
+train_input_data, train_policy, train_value = data_utils.get_data(
     planes = planes,
     moves = moves,
     batch_size = batch_size)
+
+print("Train data loaded.")
+print("Loading test data ...")
 
 test_input_data = np.load("data/test_input_data.npy")
 test_policy = np.load("data/test_policy.npy")
 test_value = np.load("data/test_value.npy")
 
-model = build_model((19,19,planes),moves,10,64,64)
-train(model,'LK_ResGo_v4',20,64)
-    
+print("Test data loaded.")
+print("Buillding model ...")
+
+model = build_model((19,19,planes),moves,10,62,64)
+
+print("Model built.")
+print("Training model ...")
+
+train(model,'LK_ResGo_v4',20,256)
+
+print("Model trained.")
