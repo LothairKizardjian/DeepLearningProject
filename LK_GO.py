@@ -6,73 +6,80 @@ import os
 import data_utils
 from tensorflow.keras import layers 
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1" 
+os.environ["CUDA_VISIBLE_DEVICES"] = "4"
 
-def build_model(input_shape, moves, blocks, filters, value_dense):
-    input = layers.Input(shape=input_shape, name="board")
+def conv_layer(x_input,filters):
     x = layers.Conv2D(
         filters=filters,
         kernel_size=(3,3),
         strides=(1,1),
         padding="same",
         activation=None,
-        use_bias=False,
-        kernel_regularizer=regularizers.l2(1e-4))(input)
+        kernel_regularizer=regularizers.l2(1e-4))(x_input)
     x = layers.BatchNormalization()(x)
+    return x
+
+def residual_layer(x_input,filters):
+    copy = x_input
+
+    x = conv_layer(x_input,filters)
     x = layers.Activation("relu")(x)
     x = layers.Dropout(0.2)(x)
+    
+    x = conv_layer(x_input,filters)
+    x = layers.Add()([x, copy])
+    x = layers.Activation("relu")(x)
+    return x
 
-    for i in range(blocks):
-        copy = x
-        x = layers.Conv2D(
-            filters=filters,
-            kernel_size=(3,3),
-            strides=(1,1),
-            padding="same",
-            activation=None,
-            use_bias=False,
-            kernel_regularizer=regularizers.l2(1e-4))(x)
-        x = layers.BatchNormalization()(x)
-        x = layers.Activation("relu")(x)
-
-        x = layers.Conv2D(filters=filters,
-                          kernel_size=(3,3),
-                          strides=(1,1),
-                          padding="same",
-                          activation=None,
-                          use_bias=False,
-                          kernel_regularizer=regularizers.l2(1e-4))(x)
-        x = layers.BatchNormalization()(x)
-        x = layers.Add()([x, copy])
-        x = layers.Activation("relu")(x)
-
+def policy_head(x_input,moves):
     policy = layers.Conv2D(
         filters=2,
         kernel_size=(1,1),
         strides=(1,1),
         padding="same",
         activation=None,
-        use_bias=False,
         kernel_regularizer=regularizers.l2(1e-4))(x)
     policy = layers.BatchNormalization()(policy)
     policy = layers.Activation("relu")(policy)
     policy = layers.Flatten()(policy)
     policy = layers.Dense(moves, activation="softmax", name="policy")(policy)
+    return policy
 
+def value_head(x_input,dense_size):
     value = layers.Conv2D(
         filters=1,
         kernel_size=(1, 1),
         strides=(1,1),
         padding="same",
         activation=None,
-        use_bias=False,
         kernel_regularizer=regularizers.l2(1e-4))(x)
     value = layers.BatchNormalization()(value)
     value = layers.Activation("relu")(value)
     value = layers.Flatten()(value)
-    value = layers.Dense(value_dense)(value)
+    value = layers.Dense(dense_size)(value)
     value = layers.Dense(1, activation="tanh", name="value")(value)
+    return value
 
+def build_model(input_shape, moves, blocks, filters, dense_size):
+    input = layers.Input(shape=input_shape, name="board")
+    
+    x = layers.Conv2D(
+        filters=filters,
+        kernel_size=(3,3),
+        strides=(1,1),
+        padding="same",
+        activation=None,
+        kernel_regularizer=regularizers.l2(1e-4))(input)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation("relu")(x)
+    x = layers.Dropout(0.2)(x)
+
+    for i in range(blocks):
+        x = residual_layer(x,filters)
+
+    policy = policy_head(x,moves)
+    value = value_head(x,dense_size)
+    
     model = keras.Model(inputs=input, outputs=[policy,value])
     model.summary()
     return model
@@ -104,7 +111,7 @@ def train(model,model_title,epochs,batch_size):
 
 planes = 8
 moves = 361
-batch_size = 50000
+batch_size = 100000
 
 print("Loading train data ...")
 
@@ -123,7 +130,7 @@ test_value = np.load("data/test_value.npy")
 print("Test data loaded.")
 print("Buillding model ...")
 
-model = build_model((19,19,planes),moves,10,62,64)
+model = build_model((19,19,planes),moves,8,64,64)
 
 print("Model built.")
 print("Training model ...")
