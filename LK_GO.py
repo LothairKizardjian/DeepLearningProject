@@ -123,7 +123,7 @@ def train(model,model_title,epochs,batch_size):
     """
 planes = 8
 moves = 361
-batch_size = 100000
+batch_size = 262144
 
 print("Loading train data ...")
 
@@ -142,7 +142,7 @@ test_value = np.load("data/test_value.npy")
 print("Test data loaded.")
 print("Buillding model ...")
 
-model = build_model((19,19,planes),moves,35,52,64)
+model = build_model((19,19,planes),moves,32,50,64)
 
 print("Model built.")
 print("Training model ...")
