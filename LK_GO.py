@@ -6,7 +6,7 @@ import os
 import data_utils
 from tensorflow.keras import layers 
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "4"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 def conv_layer(x_input,filters):
     x = layers.Conv2D(
@@ -38,7 +38,7 @@ def policy_head(x_input,moves):
         strides=(1,1),
         padding="same",
         activation=None,
-        kernel_regularizer=regularizers.l2(1e-4))(x)
+        kernel_regularizer=regularizers.l2(1e-4))(x_input)
     policy = layers.BatchNormalization()(policy)
     policy = layers.Activation("relu")(policy)
     policy = layers.Flatten()(policy)
@@ -52,7 +52,7 @@ def value_head(x_input,dense_size):
         strides=(1,1),
         padding="same",
         activation=None,
-        kernel_regularizer=regularizers.l2(1e-4))(x)
+        kernel_regularizer=regularizers.l2(1e-4))(x_input)
     value = layers.BatchNormalization()(value)
     value = layers.Activation("relu")(value)
     value = layers.Flatten()(value)
@@ -88,14 +88,26 @@ def train(model,model_title,epochs,batch_size):
     model.compile(
         optimizer=tf.keras.optimizers.Adadelta(learning_rate=1),
         loss={'value': 'mse', 'policy': 'categorical_crossentropy'},
-        metrics=['accuracy']
+        metrics=['accuracy'],
+        loss_weights=[1,0.2]
     )
 
     checkpointer  = keras.callbacks.ModelCheckpoint(
         filepath='./models/{}.h5'.format(model_title),
         verbose=1,
         save_best_only=True)
+
+    model.fit(
+        train_input_data,
+        {'policy' : train_policy, 'value' : train_value},
+        validation_data=(
+            test_input_data,
+            {'policy' : test_policy, 'value' : test_value}),
+        epochs = epochs,
+        verbose = 1,
+        callbacks=[checkpointer])
     
+    """
     model.fit_generator(
         generator=data_utils.DataSequence(
             train_input_data,
@@ -108,7 +120,7 @@ def train(model,model_title,epochs,batch_size):
         epochs=epochs,
         verbose=1,
         callbacks=[checkpointer])
-
+    """
 planes = 8
 moves = 361
 batch_size = 100000
@@ -130,11 +142,12 @@ test_value = np.load("data/test_value.npy")
 print("Test data loaded.")
 print("Buillding model ...")
 
-model = build_model((19,19,planes),moves,8,64,64)
+model = build_model((19,19,planes),moves,35,52,64)
 
 print("Model built.")
 print("Training model ...")
 
-train(model,'LK_ResGo_v4',20,256)
+train(model,'LK_ResGo_v6',20,256)
 
 print("Model trained.")
+
