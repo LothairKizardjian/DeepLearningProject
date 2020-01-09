@@ -86,8 +86,8 @@ def build_model(input_shape, moves, blocks, filters, dense_size):
 
 def train(model,model_title,epochs,batch_size):
     model.compile(
-        optimizer=tf.keras.optimizers.SGD(learning_rate=0.0001),
-        #optimizer=tf.keras.optimizers.AdaDelta(learning_rate=1),
+        #optimizer=tf.keras.optimizers.SGD(learning_rate=0.0001),
+        optimizer=tf.keras.optimizers.AdaDelta(learning_rate=1),
         loss={'value': 'mse', 'policy': 'categorical_crossentropy'},
         metrics=['accuracy'],
         loss_weights=[1,1]
@@ -121,7 +121,7 @@ def train(model,model_title,epochs,batch_size):
 planes = 8
 moves = 361
 batch_size = 100000
-datapasses = 20
+datapasses = 50
 
 print("Building model ...")
 model = build_model((19,19,planes),moves,4,139,64)
@@ -139,7 +139,7 @@ for i in range(datapasses):
     print("Train data loaded.")
     print("Training model ...")
     
-    train(model,'LK_ResGo_v9',100,256)
+    train(model,'LK_ResGo_v10',5,256)
 
     print("Model trained.")
 
