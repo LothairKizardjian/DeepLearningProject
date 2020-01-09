@@ -86,23 +86,20 @@ def build_model(input_shape, moves, blocks, filters, dense_size):
 
 def train(model,model_title,epochs,batch_size):
     model.compile(
-        optimizer=tf.keras.optimizers.Adadelta(learning_rate=1),
+        optimizer=tf.keras.optimizers.SGD(learning_rate=0.0001),
+        #optimizer=tf.keras.optimizers.AdaDelta(learning_rate=1),
         loss={'value': 'mse', 'policy': 'categorical_crossentropy'},
         metrics=['accuracy'],
-        loss_weights=[1,0.2]
+        loss_weights=[1,1]
     )
 
     checkpointer  = keras.callbacks.ModelCheckpoint(
         filepath='./models/{}.h5'.format(model_title),
-        verbose=1,
-        save_best_only=True)
+        verbose=1)
 
     model.fit(
         train_input_data,
         {'policy' : train_policy, 'value' : train_value},
-        validation_data=(
-            test_input_data,
-            {'policy' : test_policy, 'value' : test_value}),
         epochs = epochs,
         verbose = 1,
         callbacks=[checkpointer])
@@ -123,31 +120,26 @@ def train(model,model_title,epochs,batch_size):
     """
 planes = 8
 moves = 361
-batch_size = 262144
+batch_size = 100000
+datapasses = 20
 
-print("Loading train data ...")
+print("Building model ...")
+model = build_model((19,19,planes),moves,4,139,64)
+print("Model Built.")
 
-train_input_data, train_policy, train_value = data_utils.get_data(
-    planes = planes,
-    moves = moves,
-    batch_size = batch_size)
+for i in range(datapasses):
 
-print("Train data loaded.")
-print("Loading test data ...")
+    print("Loading train data ...")
+    
+    train_input_data, train_policy, train_value = data_utils.get_data(
+        planes = planes,
+        moves = moves,
+        batch_size = batch_size)
+    
+    print("Train data loaded.")
+    print("Training model ...")
+    
+    train(model,'LK_ResGo_v9',100,256)
 
-test_input_data = np.load("data/test_input_data.npy")
-test_policy = np.load("data/test_policy.npy")
-test_value = np.load("data/test_value.npy")
-
-print("Test data loaded.")
-print("Buillding model ...")
-
-model = build_model((19,19,planes),moves,32,50,64)
-
-print("Model built.")
-print("Training model ...")
-
-train(model,'LK_ResGo_v6',20,256)
-
-print("Model trained.")
+    print("Model trained.")
 
